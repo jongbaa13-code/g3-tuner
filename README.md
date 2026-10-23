@@ -74,6 +74,32 @@ None of these are bundled in this repository.
 
 This project is not affiliated with or endorsed by Creative Technology, NVIDIA or Microsoft. Product names are trademarks of their respective owners.
 
+## Code signing policy
+
+Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org).
+
+- Release binaries are built from this repository by [GitHub Actions](.github/workflows/build.yml) on GitHub-hosted runners. Only these builds are submitted for signing.
+- Committers and reviewers: [jongbaa13-code](https://github.com/jongbaa13-code)
+- Approvers: [jongbaa13-code](https://github.com/jongbaa13-code)
+
+ไฟล์ exe ที่เผยแพร่ในหน้า Releases สร้างจากซอร์สโค้ดใน repo นี้ด้วย GitHub Actions เท่านั้น
+
+## Privacy policy
+
+This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it, with this one exception: it downloads the public AutoEq headphone list at startup. That request sends no personal data, settings or recordings.
+
+Network connections the program makes:
+
+| When | Where | What is sent |
+|---|---|---|
+| At startup | `raw.githubusercontent.com` (AutoEq headphone index) | a plain download request |
+| When you pick a headphone profile | `raw.githubusercontent.com` (that profile) | a plain download request |
+| When you click "install noise suppression" | `github.com` (RNNoise plugin release) | a plain download request |
+
+Mic test recordings are stored only on your computer, in `%APPDATA%\G3Tuner`. There is no telemetry.
+
+โปรแกรมไม่ส่งข้อมูลส่วนตัว การตั้งค่า หรือเสียงที่อัดไว้ออกจากเครื่อง ไฟล์เสียงทดสอบไมค์เก็บไว้ในเครื่องเท่านั้น
+
 ## License
 
 [MIT](LICENSE)

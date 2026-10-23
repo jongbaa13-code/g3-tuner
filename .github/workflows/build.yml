@@ -1,0 +1,86 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    outputs:
+      artifact-id: ${{ steps.upload-unsigned.outputs.artifact-id }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build G3Tuner.exe
+        shell: powershell
+        run: powershell -ExecutionPolicy Bypass -File .\build.ps1
+
+      - name: Upload unsigned build
+        id: upload-unsigned
+        uses: actions/upload-artifact@v7
+        with:
+          name: G3Tuner-unsigned
+          path: G3Tuner.exe
+          if-no-files-found: error
+
+  # Signs release builds through SignPath Foundation.
+  # Skipped until the repository variable SIGNPATH_ORGANIZATION_ID and the secret SIGNPATH_API_TOKEN are set.
+  sign:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v') && vars.SIGNPATH_ORGANIZATION_ID != ''
+    runs-on: windows-latest
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Submit signing request to SignPath
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: g3-tuner
+          signing-policy-slug: release-signing
+          github-artifact-id: ${{ needs.build.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: signed
+
+      - name: Upload signed build
+        uses: actions/upload-artifact@v7
+        with:
+          name: G3Tuner-signed
+          path: signed/G3Tuner.exe
+          if-no-files-found: error
+
+  release:
+    needs: [build, sign]
+    if: startsWith(github.ref, 'refs/tags/v') && !failure() && !cancelled()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -f dist/G3Tuner-signed/G3Tuner.exe ]; then
+            file=dist/G3Tuner-signed/G3Tuner.exe
+            notes="Signed build. Free code signing provided by SignPath.io, certificate by SignPath Foundation."
+          else
+            file=dist/G3Tuner-unsigned/G3Tuner.exe
+            notes="Unsigned build produced by GitHub Actions. Windows Smart App Control may block unsigned builds; you can also build from source with build.ps1."
+          fi
+          gh release create "$GITHUB_REF_NAME" "$file" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "G3 Tuner $GITHUB_REF_NAME" \
+            --notes "$notes"
