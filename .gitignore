@@ -1,0 +1,8 @@
+# Build output (unsigned binaries go to GitHub Releases after signing, not into the repo)
+*.exe
+*.dll
+*.pdb
+
+# Local test artifacts
+*.zip
+test_*.wav
