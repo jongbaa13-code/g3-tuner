@@ -73,12 +73,19 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if [ -f dist/G3Tuner-signed/G3Tuner.exe ]; then
-            file=dist/G3Tuner-signed/G3Tuner.exe
+          # download-artifact skips the per-artifact folder when there is only one artifact, so search for the file
+          signed=$(find dist -path '*G3Tuner-signed*' -name G3Tuner.exe | head -n 1)
+          unsigned=$(find dist -name G3Tuner.exe ! -path '*G3Tuner-signed*' | head -n 1)
+          if [ -n "$signed" ]; then
+            file=$signed
             notes="Signed build. Free code signing provided by SignPath.io, certificate by SignPath Foundation."
-          else
-            file=dist/G3Tuner-unsigned/G3Tuner.exe
+          elif [ -n "$unsigned" ]; then
+            file=$unsigned
             notes="Unsigned build produced by GitHub Actions. Windows Smart App Control may block unsigned builds; you can also build from source with build.ps1."
+          else
+            echo "G3Tuner.exe not found in downloaded artifacts" >&2
+            find dist >&2
+            exit 1
           fi
           gh release create "$GITHUB_REF_NAME" "$file" \
             --repo "$GITHUB_REPOSITORY" \
